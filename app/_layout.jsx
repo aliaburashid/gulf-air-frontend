@@ -23,6 +23,11 @@ export default function RootLayout() {
       {/* /Each <Stack.Screen> defines a route in the app. */}
       <Stack.Screen name="index" />
       <Stack.Screen name="splash" />
+      <Stack.Screen name="home" />
+      <Stack.Screen name="menu" />
+      <Stack.Screen name="my-trips" />
+      <Stack.Screen name="manage-booking" />
+      <Stack.Screen name="book" />
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
       <Stack.Screen name="falcon-flyer" />

@@ -1,352 +1,339 @@
-import React, { useState } from 'react';
+// Import React hooks and components for dashboard functionality
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
+/**
+ * DashboardScreen Component - Gulf Air App User Dashboard
+ * 
+ * This component serves as the main dashboard after successful login.
+ * It provides quick access to key features and user information.
+ * 
+ * Features:
+ * - Welcome message with user information
+ * - Quick access to My Trips, Book Flights, and Falcon Flyer
+ * - Recent activity and notifications
+ * - Navigation to all main app features
+ * 
+ * @returns {JSX.Element} A complete dashboard interface
+ */
 export default function DashboardScreen() {
-  const [user] = useState({
-    name: 'Ahmed Al-Rashid',
-    falconFlyerNumber: 'FF123456',
-    tier: 'Silver',
-    points: 1250,
-  });
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => router.replace('/login'),
-        },
-      ]
-    );
+  /**
+   * Handle Navigation to My Trips
+   * Navigates to the My Trips page
+   */
+  const handleMyTrips = () => {
+    router.push('/my-trips');
   };
 
-  const handleBookFlight = () => {
-    Alert.alert('Book Flight', 'Navigate to flight booking');
+  /**
+   * Handle Navigation to Book Flights
+   * Navigates to the Book page
+   */
+  const handleBookFlights = () => {
+    router.push('/book');
   };
 
-  const handleMyBookings = () => {
-    Alert.alert('My Bookings', 'Navigate to bookings');
-  };
-
+  /**
+   * Handle Navigation to Falcon Flyer
+   * Navigates to the Falcon Flyer page
+   */
   const handleFalconFlyer = () => {
-    Alert.alert('Falcon Flyer', 'Navigate to loyalty program');
+    router.push('/falcon-flyer');
   };
 
-  const handleCheckIn = () => {
-    Alert.alert('Check In', 'Navigate to check-in');
+  /**
+   * Handle Menu Navigation
+   * Opens the menu screen
+   */
+  const handleMenu = () => {
+    router.push('/menu');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+      {/* Set status bar to dark content for white background */}
+      <StatusBar style="dark" />
+      
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.timeText}>7:46</Text>
+          <Ionicons name="notifications-outline" size={20} color="#1A1A2E" />
         </View>
+        
+        <Text style={styles.headerTitle}>Dashboard</Text>
+        
+        <TouchableOpacity style={styles.menuButton} onPress={handleMenu}>
+          <Ionicons name="menu" size={24} color="#A68F65" />
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView style={styles.scrollContainer}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.falconFlyerText}>Falcon Flyer: {user.falconFlyerNumber}</Text>
-        </View>
-
-        {/* Falcon Flyer Status */}
-        <View style={styles.loyaltyCard}>
-          <View style={styles.loyaltyHeader}>
-            <Text style={styles.loyaltyTitle}>Falcon Flyer Status</Text>
-            <View style={[styles.tierBadge, styles[`${user.tier.toLowerCase()}Tier`]]}>
-              <Text style={styles.tierText}>{user.tier}</Text>
-            </View>
-          </View>
-          <Text style={styles.pointsText}>{user.points.toLocaleString()} Points</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '45%' }]} />
-          </View>
-          <Text style={styles.progressText}>1,250 / 2,500 points to Gold</Text>
+          <Text style={styles.welcomeTitle}>Welcome back!</Text>
+          <Text style={styles.welcomeSubtitle}>Ready for your next adventure?</Text>
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.quickActions}>
+        <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           
-          <View style={styles.actionGrid}>
-            <TouchableOpacity style={styles.actionCard} onPress={handleBookFlight}>
-              <Text style={styles.actionIcon}>✈️</Text>
-              <Text style={styles.actionTitle}>Book Flight</Text>
-              <Text style={styles.actionDescription}>Search and book your next flight</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity style={styles.actionCard} onPress={handleMyTrips}>
+              <View style={styles.actionIcon}>
+                <Ionicons name="airplane" size={32} color="#A68F65" />
+              </View>
+              <Text style={styles.actionTitle}>My Trips</Text>
+              <Text style={styles.actionSubtitle}>View your bookings</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionCard} onPress={handleMyBookings}>
-              <Text style={styles.actionIcon}>📋</Text>
-              <Text style={styles.actionTitle}>My Bookings</Text>
-              <Text style={styles.actionDescription}>View and manage your bookings</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionCard} onPress={handleCheckIn}>
-              <Text style={styles.actionIcon}>✅</Text>
-              <Text style={styles.actionTitle}>Check In</Text>
-              <Text style={styles.actionDescription}>Check in for your upcoming flight</Text>
+            <TouchableOpacity style={styles.actionCard} onPress={handleBookFlights}>
+              <View style={styles.actionIcon}>
+                <Ionicons name="calendar" size={32} color="#A68F65" />
+              </View>
+              <Text style={styles.actionTitle}>Book Flights</Text>
+              <Text style={styles.actionSubtitle}>Search and book</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionCard} onPress={handleFalconFlyer}>
-              <Text style={styles.actionIcon}>🏆</Text>
+              <View style={styles.actionIcon}>
+                <Ionicons name="heart" size={32} color="#A68F65" />
+              </View>
               <Text style={styles.actionTitle}>Falcon Flyer</Text>
-              <Text style={styles.actionDescription}>Manage your loyalty account</Text>
+              <Text style={styles.actionSubtitle}>Loyalty program</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionCard}>
+              <View style={styles.actionIcon}>
+                <Ionicons name="settings" size={32} color="#A68F65" />
+              </View>
+              <Text style={styles.actionTitle}>Settings</Text>
+              <Text style={styles.actionSubtitle}>Account preferences</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Recent Activity */}
-        <View style={styles.recentActivity}>
+        <View style={styles.recentActivityContainer}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           
-          <View style={styles.activityItem}>
+          <View style={styles.activityCard}>
             <View style={styles.activityIcon}>
-              <Text style={styles.activityEmoji}>✈️</Text>
+              <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
             </View>
             <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>Flight Booked</Text>
-              <Text style={styles.activityDescription}>BAH → LHR on Dec 15, 2024</Text>
-              <Text style={styles.activityDate}>2 days ago</Text>
+              <Text style={styles.activityTitle}>Login Successful</Text>
+              <Text style={styles.activitySubtitle}>Welcome to Gulf Air</Text>
             </View>
-            <Text style={styles.activityPoints}>+250 pts</Text>
-          </View>
-
-          <View style={styles.activityItem}>
-            <View style={styles.activityIcon}>
-              <Text style={styles.activityEmoji}>🏆</Text>
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>Tier Upgrade</Text>
-              <Text style={styles.activityDescription}>Congratulations! You're now Silver</Text>
-              <Text style={styles.activityDate}>1 week ago</Text>
-            </View>
+            <Text style={styles.activityTime}>Just now</Text>
           </View>
         </View>
       </ScrollView>
+
+      {/* Bottom Navigation Bar */}
+      <View style={styles.bottomNavBar}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/home')}>
+          <Ionicons name="home" size={24} color="#8B8B8B" />
+          <Text style={styles.navItemText}>Home</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={handleMyTrips}>
+          <Ionicons name="airplane" size={24} color="#8B8B8B" />
+          <Text style={styles.navItemText}>My Trips</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={handleBookFlights}>
+          <Ionicons name="calendar" size={24} color="#8B8B8B" />
+          <Text style={styles.navItemText}>Book</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={handleFalconFlyer}>
+          <Ionicons name="heart" size={24} color="#8B8B8B" />
+          <Text style={styles.navItemText}>Falconflyer</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
+// StyleSheet for Dashboard Screen - Gulf Air Brand Colors and Layout
 const styles = StyleSheet.create({
+  // Main container with light gray background
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E', // Gulf Air dark blue
+    backgroundColor: '#F5F5F5',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
+  // Header section styling
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 30,
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 120,
-    height: 50,
-  },
-  logoutButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#A68F65',
+    paddingVertical: 16,
+    backgroundColor: '#F5F5F5',
   },
-  logoutText: {
-    color: '#A68F65',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  welcomeSection: {
-    marginBottom: 24,
-  },
-  welcomeText: {
-    fontSize: 18,
-    color: '#B8B8B8',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  falconFlyerText: {
-    fontSize: 16,
-    color: '#A68F65',
-    fontWeight: '600',
-  },
-  loyaltyCard: {
-    backgroundColor: '#16213E',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-  },
-  loyaltyHeader: {
+  // Header left section
+  headerLeft: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 8,
   },
-  loyaltyTitle: {
+  // Time text styling
+  timeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A2E',
+  },
+  // Header title styling
+  headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  tierBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  silverTier: {
-    backgroundColor: '#C0C0C0',
-  },
-  tierText: {
-    fontSize: 12,
     fontWeight: 'bold',
     color: '#1A1A2E',
   },
-  pointsText: {
+  // Menu button styling
+  menuButton: {
+    padding: 4,
+  },
+  // Scroll container
+  scrollContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  // Welcome section
+  welcomeSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  // Welcome title
+  welcomeTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#A68F65',
-    marginBottom: 12,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#2A2A3E',
-    borderRadius: 4,
+    color: '#1A1A2E',
     marginBottom: 8,
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#A68F65',
-    borderRadius: 4,
+  // Welcome subtitle
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
   },
-  progressText: {
-    fontSize: 12,
-    color: '#B8B8B8',
+  // Quick actions container
+  quickActionsContainer: {
+    marginBottom: 20,
   },
-  quickActions: {
-    marginBottom: 24,
-  },
+  // Section title
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#1A1A2E',
     marginBottom: 16,
   },
-  actionGrid: {
+  // Actions grid
+  actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
+  // Action card
   actionCard: {
-    backgroundColor: '#16213E',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    width: '48%',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  // Action icon
+  actionIcon: {
+    marginBottom: 12,
+  },
+  // Action title
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1A1A2E',
+    marginBottom: 4,
+  },
+  // Action subtitle
+  actionSubtitle: {
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+  },
+  // Recent activity container
+  recentActivityContainer: {
+    marginBottom: 20,
+  },
+  // Activity card
+  activityCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
-    width: '48%',
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  actionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  actionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  actionDescription: {
-    fontSize: 12,
-    color: '#B8B8B8',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  recentActivity: {
-    marginBottom: 24,
-  },
-  activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#16213E',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
+  // Activity icon
   activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#2A2A3E',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 12,
   },
-  activityEmoji: {
-    fontSize: 18,
-  },
+  // Activity content
   activityContent: {
     flex: 1,
   },
+  // Activity title
   activityTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 2,
+    color: '#1A1A2E',
+    marginBottom: 4,
   },
-  activityDescription: {
+  // Activity subtitle
+  activitySubtitle: {
     fontSize: 14,
-    color: '#B8B8B8',
-    marginBottom: 2,
+    color: '#666666',
   },
-  activityDate: {
+  // Activity time
+  activityTime: {
     fontSize: 12,
     color: '#8B8B8B',
   },
-  activityPoints: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#A68F65',
+  // Bottom navigation bar styling
+  bottomNavBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  // Navigation item styling
+  navItem: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  // Navigation item text styling
+  navItemText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#8B8B8B',
   },
 });
-

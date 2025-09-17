@@ -14,11 +14,11 @@ import { router } from 'expo-router';
 export default function SplashScreen() {
   // Effect hook to handle automatic navigation after splash display
   useEffect(() => {
-    // Show splash screen for 3 seconds, then navigate to login
+    // Show splash screen for 3 seconds, then navigate to home
     // This gives users time to see the branding and provides smooth UX
     const timer = setTimeout(() => {
-      // Navigate to login screen using router.replace to prevent back navigation
-      router.replace('/login');
+      // Navigate to home screen using router.replace to prevent back navigation
+      router.replace('/home');
     }, 3000);
 
     // Cleanup function to clear the timer if component unmounts

@@ -65,15 +65,20 @@ export default function LoginScreen() {
 
       // Prepare login data based on selected method
       const loginData = {
-        password: password
+        password: password.trim()
       };
 
       // Add appropriate identifier based on login method
       if (loginMethod === 'falconFlyer') {
-        loginData.falcon_flyer_number = falconFlyerNumber;
+        loginData.falcon_flyer_number = falconFlyerNumber.trim();
       } else {
-        loginData.email = email;
+        loginData.email = email.trim();
       }
+
+      // Debug: Log the data being sent
+      console.log('Login data being sent:', loginData);
+      console.log('API endpoint being called:', '/auth/login');
+      console.log('Full URL:', 'http://localhost:8000/auth/login');
 
       // Authenticate user with backend API
       const response = await authAPI.login(loginData);
@@ -81,6 +86,7 @@ export default function LoginScreen() {
       // Store JWT token for authenticated API requests
       if (response.token) {
         await setAuthToken(response.token);
+        console.log('Login successful, token stored');
       }
       
       // Log success for debugging and navigate to dashboard
@@ -290,8 +296,8 @@ const styles = StyleSheet.create({
   },
   // Gulf Air logo styling - increased size
   logo: {
-    width: 700,
-    height: 350,
+    width: 800,
+    height: 400,
   },
   // Welcome text styling with reduced top margin
   welcomeText: {
@@ -352,12 +358,12 @@ const styles = StyleSheet.create({
   inputWrapper: {
     marginBottom: 16,
   },
-  // Input label styling
+  // Input label styling with increased spacing
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   // Text input styling with dark theme
   textInput: {

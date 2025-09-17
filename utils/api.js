@@ -19,8 +19,13 @@ apiClient.interceptors.request.use(
   async (config) => {
     console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
     const token = await getAuthToken();
+    console.log('Request interceptor - Token found:', !!token);
+    console.log('Request interceptor - Token value:', token ? `${token.substring(0, 20)}...` : 'null');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Authorization header set:', config.headers.Authorization ? 'Yes' : 'No');
+    } else {
+      console.log('No token available for request');
     }
     return config;
   },
@@ -42,9 +47,34 @@ apiClient.interceptors.response.use(
     // Handle different types of errors
     if (error.response) {
       // Server responded with error status
-      const message = error.response.data?.detail || 
-                     error.response.data?.message || 
-                     `HTTP error! status: ${error.response.status}`;
+      console.error('Full error response:', error.response);
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+      
+      let message = error.response.data?.detail || 
+                   error.response.data?.message || 
+                   `HTTP error! status: ${error.response.status}`;
+      
+      // Handle specific error cases
+      if (error.response.status === 400) {
+        if (message.includes('already cancelled') || message.includes('cancelled')) {
+          message = 'Booking already cancelled';
+        } else if (message.includes('not found')) {
+          message = 'Booking not found';
+        } else if (message.includes('cannot be cancelled')) {
+          message = 'Booking cannot be cancelled at this time';
+        } else if (message.includes('Invalid credentials')) {
+          message = 'Invalid credentials';
+        } else if (message.includes('Please provide')) {
+          message = 'Please provide email, Falcon Flyer number, or username';
+        }
+      } else if (error.response.status === 404) {
+        message = 'Booking not found';
+      } else if (error.response.status === 403) {
+        message = 'Not authorized to perform this action';
+      }
+      
       console.error('Server Error:', message);
       throw new Error(message);
     } else if (error.request) {
@@ -87,16 +117,37 @@ export const API_ENDPOINTS = {
 
 // Helper function to get auth token from storage
 export const getAuthToken = async () => {
-  // TODO: Implement token storage (AsyncStorage)
-  // For now, return null - you can implement AsyncStorage later
-  return null;
+  try {
+    // For now, we'll use a simple approach
+    // In a real app, you'd use AsyncStorage
+    const token = global.authToken || null;
+    return token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
 };
 
 // Helper function to store auth token
 export const setAuthToken = async (token) => {
-  // TODO: Implement token storage (AsyncStorage)
-  // For now, just log it
-  console.log('Token received:', token);
+  try {
+    // Store token globally for now
+    // In a real app, you'd use AsyncStorage.setItem('authToken', token)
+    global.authToken = token;
+    console.log('Token stored:', token);
+  } catch (error) {
+    console.error('Error storing auth token:', error);
+  }
+};
+
+// Helper function to clear auth token
+export const clearAuthToken = async () => {
+  try {
+    global.authToken = null;
+    console.log('Token cleared');
+  } catch (error) {
+    console.error('Error clearing auth token:', error);
+  }
 };
 
 // Test API connectivity
@@ -135,6 +186,7 @@ export const bookingsAPI = {
   getBooking: (id) => apiClient.get(`${API_ENDPOINTS.BOOKINGS}/${id}`),
   cancelBooking: (id) => apiClient.delete(`${API_ENDPOINTS.BOOKINGS}/${id}`),
   checkIn: (id) => apiClient.post(`${API_ENDPOINTS.CHECK_IN}/${id}/checkin`),
+  rescheduleBooking: (bookingId, newFlightId) => apiClient.post(`${API_ENDPOINTS.BOOKINGS}/${bookingId}/reschedule`, { new_flight_id: newFlightId }),
 };
 
 export const loyaltyAPI = {
