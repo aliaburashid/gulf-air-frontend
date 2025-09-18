@@ -17,8 +17,6 @@ Grab your seat, stow your carry‑on, and let’s take off. 🧳🛫
 
 ## ✅ Pre‑Flight Checklist
 
-- Node.js 18+
-- npm (or yarn)
 - Expo CLI (via `npx expo` is fine)
 - Python 3.11+ with Pipenv (for the backend)
 
@@ -38,7 +36,7 @@ Grab your seat, stow your carry‑on, and let’s take off. 🧳🛫
 
 Cabin crew, prepare the backend for departure at `http://localhost:8000`.
 
-1) Taxi to the backend folder:
+1) Navigate to the backend folder:
 ```
 cd /Users/alyazz/code/ga/projects/capstone/gulf-air-backend
 ```
@@ -55,7 +53,7 @@ pipenv run python seed.py
 
 4) Takeoff:
 ```
-pipenv run python main.py
+pipenv run uvicorn main:app --reload
 ```
 
 Runway lights you’ll see:
@@ -70,7 +68,6 @@ Runway lights you’ll see:
 Open a new terminal window:
 ```
 cd /Users/alyazz/code/ga/projects/capstone/gulf-air-frontend
-npm install
 ```
 
 Board the app:

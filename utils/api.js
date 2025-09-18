@@ -168,7 +168,8 @@ export const testAPIConnection = async () => {
 export const authAPI = {
   login: (credentials) => apiClient.post(API_ENDPOINTS.LOGIN, credentials),
   register: (userData) => apiClient.post(API_ENDPOINTS.REGISTER, userData),
-  logout: () => apiClient.post(API_ENDPOINTS.LOGOUT),
+  // No-op logout as backend lacks endpoint; keep UI flow local
+  logout: async () => ({ success: true }),
   getProfile: () => apiClient.get(API_ENDPOINTS.PROFILE),
 };
 

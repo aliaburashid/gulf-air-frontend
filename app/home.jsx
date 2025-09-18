@@ -1,5 +1,5 @@
 // Import React hooks and components for home page functionality
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,13 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { getAuthToken, clearAuthToken, authAPI } from '../utils/api';
 
 /**
  * HomeScreen Component - Gulf Air App Main Landing Page
@@ -29,6 +31,20 @@ import { Ionicons } from '@expo/vector-icons';
  * @returns {JSX.Element} A complete home page with navigation options
  */
 export default function HomeScreen() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await getAuthToken();
+      setIsLoggedIn(!!token);
+    };
+    const unsubscribe = router.addListener?.('focus', checkAuth);
+    checkAuth();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
   /**
    * Handle Login Navigation
    * Navigates to the login screen
@@ -51,6 +67,20 @@ export default function HomeScreen() {
    */
   const handleFalconFlyer = () => {
     router.push('/falcon-flyer');
+  };
+
+  const handleLogout = async () => {
+    try {
+      try {
+        await authAPI.logout();
+      } catch (e) {}
+      await clearAuthToken();
+      setIsLoggedIn(false);
+      Alert.alert('Logged out', 'You have been signed out.');
+      router.replace('/login');
+    } catch (error) {
+      Alert.alert('Logout Failed', error.message || 'Please try again.');
+    }
   };
 
   return (
@@ -95,26 +125,41 @@ export default function HomeScreen() {
 
         {/* Main Navigation Cards Container */}
         <View style={styles.cardsContainer}>
-          {/* Login/Signup Navigation Card */}
+          {/* Auth Navigation Card */}
           <View style={styles.navigationCard}>
             <Text style={styles.cardTitle}>Start earning rewards today</Text>
-            <Text style={styles.cardSubtitle}>Join Falconflyer or login if you are an existing member</Text>
+            {isLoggedIn ? (
+              <Text style={styles.cardSubtitle}>You're signed in. Manage your trips or log out below.</Text>
+            ) : (
+              <Text style={styles.cardSubtitle}>Join Falconflyer or login if you are an existing member</Text>
+            )}
             
-            {/* Login and Signup Buttons */}
+            {/* Conditional Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleLogin}
-              >
-                <Text style={styles.loginButtonText}>Log in</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.signupButton}
-                onPress={handleSignup}
-              >
-                <Text style={styles.signupButtonText}>Sign Up</Text>
-              </TouchableOpacity>
+              {isLoggedIn ? (
+                <TouchableOpacity
+                  style={[styles.loginButton]}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.loginButtonText}>Logout</Text>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.loginButton}
+                    onPress={handleLogin}
+                  >
+                    <Text style={styles.loginButtonText}>Log in</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.signupButton}
+                    onPress={handleSignup}
+                  >
+                    <Text style={styles.signupButtonText}>Sign Up</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
 

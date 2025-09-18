@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { authAPI, clearAuthToken } from '../utils/api';
 
 /**
  * MenuScreen Component - Gulf Air App Menu
@@ -68,6 +69,22 @@ export default function MenuScreen() {
     router.back();
   };
 
+  const handleLogout = async () => {
+    try {
+      // Best-effort backend notification (if endpoint exists)
+      try {
+        await authAPI.logout();
+      } catch (e) {
+        // Ignore if backend doesn't support logout
+      }
+      await clearAuthToken();
+      Alert.alert('Logged out', 'You have been signed out.');
+      router.replace('/login');
+    } catch (error) {
+      Alert.alert('Logout Failed', error.message || 'Please try again.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Set status bar to light content for gold header */}
@@ -122,6 +139,13 @@ export default function MenuScreen() {
             onPress={() => handleMenuItem('clear-cache')}
           >
             <Text style={styles.clearCacheText}>Clear Cache</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={handleLogout}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
 
@@ -242,6 +266,10 @@ const styles = StyleSheet.create({
   },
   // Clear cache text styling (red)
   clearCacheText: {
+    fontSize: 16,
+    color: '#FF4444',
+  },
+  logoutText: {
     fontSize: 16,
     color: '#FF4444',
   },
