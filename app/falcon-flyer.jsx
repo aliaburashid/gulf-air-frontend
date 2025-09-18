@@ -28,7 +28,7 @@ export default function FalconFlyerScreen() {
       [
         {
           text: 'OK',
-          onPress: () => router.push('/dashboard')
+          onPress: () => router.push('/home')
         }
       ]
     );

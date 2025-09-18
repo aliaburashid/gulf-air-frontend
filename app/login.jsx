@@ -89,9 +89,9 @@ export default function LoginScreen() {
         console.log('Login successful, token stored');
       }
       
-      // Log success for debugging and navigate to dashboard
+      // Log success for debugging and navigate to home
       console.log('Login successful:', response);
-      router.push('/dashboard');
+      router.push('/home');
     } catch (error) {
       // Handle authentication errors and display user-friendly messages
       console.error('Login error:', error);

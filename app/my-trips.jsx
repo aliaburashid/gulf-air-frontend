@@ -235,24 +235,25 @@ export default function MyTripsScreen() {
    */
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    
+
     try {
-      // Handle both Date objects and date strings
-      let date;
-      if (dateString instanceof Date) {
-        date = dateString;
-      } else {
-        date = new Date(dateString + 'T12:00:00'); // Add time to avoid timezone issues
+      // Normalize string: trim microseconds to milliseconds if present
+      let input = dateString;
+      if (!(dateString instanceof Date)) {
+        input = String(dateString).replace(/\.(\d{3})\d+$/, '.$1');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+          input = `${input}T12:00:00`;
+        }
       }
-      
-      // Check if date is valid
+      const date = dateString instanceof Date ? dateString : new Date(input);
+
       if (isNaN(date.getTime())) {
         console.warn('Invalid date:', dateString);
         return 'N/A';
       }
-      
-      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
-                     'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
       const day = date.getDate();
       const month = months[date.getMonth()];
       return `${day} ${month}`;
@@ -277,8 +278,10 @@ export default function MyTripsScreen() {
    */
   const canCheckIn = (departureTime, bookingStatus) => {
     if (bookingStatus !== 'confirmed') return false;
-    
-    const departure = new Date(departureTime);
+    const normalized = typeof departureTime === 'string'
+      ? departureTime.replace(/\.(\d{3})\d+$/, '.$1')
+      : departureTime;
+    const departure = new Date(normalized);
     const now = new Date();
     const hoursUntilDeparture = (departure - now) / (1000 * 60 * 60);
     
@@ -297,8 +300,11 @@ export default function MyTripsScreen() {
     if (bookingStatus === 'cancelled') {
       return 'This booking has been cancelled.';
     }
-    
-    const departure = new Date(departureTime);
+
+    const normalized = typeof departureTime === 'string'
+      ? departureTime.replace(/\.(\d{3})\d+$/, '.$1')
+      : departureTime;
+    const departure = new Date(normalized);
     const now = new Date();
     const hoursUntilDeparture = (departure - now) / (1000 * 60 * 60);
     
@@ -444,7 +450,13 @@ export default function MyTripsScreen() {
                           <Text style={styles.bookingLabel}>Booking Reference</Text>
                           <View style={styles.bookingRef}>
                             <Ionicons name="document-text" size={16} color="#A68F65" />
-                            <Text style={styles.bookingCode}>{booking.bookingReference}</Text>
+                            <Text
+                              style={styles.bookingCode}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {booking.bookingReference}
+                            </Text>
                           </View>
                         </View>
                       </View>
@@ -603,6 +615,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   // Trip image container
   tripImageContainer: {
@@ -635,11 +648,13 @@ const styles = StyleSheet.create({
   // Trip details container
   tripDetails: {
     padding: 16,
+    overflow: 'hidden',
   },
   // Trip info section
   tripInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
   // Trip left section
@@ -680,6 +695,8 @@ const styles = StyleSheet.create({
   // Trip right section
   tripRight: {
     alignItems: 'flex-end',
+    maxWidth: '35%',
+    flexShrink: 1,
   },
   // Booking label styling
   bookingLabel: {
@@ -692,12 +709,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    maxWidth: '100%',
   },
   // Booking code styling
   bookingCode: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A2E',
+    textAlign: 'right',
+    flexShrink: 1,
   },
   // Action buttons container
   actionButtons: {

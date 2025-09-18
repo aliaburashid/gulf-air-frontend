@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { bookingsAPI, getAuthToken } from '../utils/api';
+import { bookingsAPI, flightsAPI, getAuthToken } from '../utils/api';
 
 /**
  * ManageBookingScreen Component - Gulf Air App Booking Management
@@ -37,15 +37,15 @@ export default function ManageBookingScreen() {
   const [booking, setBooking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
-  const [refundReason, setRefundReason] = useState('');
   
   // Reschedule state
   const [availableFlights, setAvailableFlights] = useState([]);
   const [selectedNewFlight, setSelectedNewFlight] = useState(null);
+  const [selectedSeatClass, setSelectedSeatClass] = useState(null);
+  const [selectedSeatNumber, setSelectedSeatNumber] = useState(null);
   const [isLoadingFlights, setIsLoadingFlights] = useState(false);
 
   // Load booking details on component mount
@@ -173,73 +173,14 @@ export default function ManageBookingScreen() {
     }
   };
 
-  /**
-   * Handle Cancel Booking
-   * Processes booking cancellation with refund request
-   */
-  const handleCancelBooking = async () => {
-    // Check if booking is already cancelled
-    if (booking?.booking_status === 'cancelled') {
-      Alert.alert(
-        'Already Cancelled',
-        'This booking has already been cancelled.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
-    try {
-      await bookingsAPI.cancelBooking(booking.id);
-      Alert.alert(
-        'Booking Cancelled',
-        'Your booking has been cancelled successfully. Refund will be processed within 5-7 business days.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/my-trips')
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
-      
-      // Handle specific error messages
-      let errorMessage = 'Failed to cancel booking. Please try again.';
-      
-      if (error.message && error.message.includes('already cancelled')) {
-        errorMessage = 'This booking has already been cancelled.';
-      } else if (error.message && error.message.includes('not found')) {
-        errorMessage = 'Booking not found. It may have already been cancelled.';
-      } else if (error.message && error.message.includes('cannot be cancelled')) {
-        errorMessage = 'This booking cannot be cancelled at this time.';
-      }
-      
-      Alert.alert('Error', errorMessage);
-    }
-  };
 
   /**
    * Handle Cancel & Refund Button
    * Shows confirmation dialog for cancellation
    */
   const handleCancelAndRefund = () => {
-    Alert.alert(
-      'Cancel & Request Refund',
-      `Are you sure you want to cancel booking ${booking.booking_reference}? This action cannot be undone and a refund will be processed.`,
-      [
-        {
-          text: 'Keep Booking',
-          style: 'cancel',
-        },
-        {
-          text: 'Cancel & Refund',
-          style: 'destructive',
-          onPress: () => {
-            setShowCancelModal(true);
-          },
-        },
-      ]
-    );
+    // Navigate to dedicated cancel booking page
+    router.push(`/cancel-booking?bookingId=${booking.id}`);
   };
 
   /**
@@ -283,7 +224,13 @@ export default function ManageBookingScreen() {
     }
 
     try {
-      const response = await bookingsAPI.rescheduleBooking(booking.id, selectedNewFlight.id);
+      const response = await bookingsAPI.rescheduleBooking(
+        booking.id,
+        selectedNewFlight.id,
+        selectedSeatClass || booking.seat_class,
+        selectedSeatNumber || booking.seat_number
+      );
+      const newBooking = response?.new_booking;
       
       Alert.alert(
         'Reschedule Successful',
@@ -294,16 +241,37 @@ export default function ManageBookingScreen() {
             onPress: () => {
               setShowRescheduleModal(false);
               setSelectedNewFlight(null);
+              setSelectedSeatClass(null);
+              setSelectedSeatNumber(null);
               setAvailableFlights([]);
-              // Reload booking details to show updated information
-              loadBookingDetails();
+              // Navigate to the new booking if available, otherwise reload
+              if (newBooking?.id) {
+                router.replace(`/manage-booking?bookingId=${newBooking.id}`);
+              } else {
+                loadBookingDetails();
+              }
             },
           },
         ]
       );
     } catch (error) {
       console.error('Error rescheduling booking:', error);
-      Alert.alert('Reschedule Error', error.message || 'Failed to reschedule booking. Please try again.');
+      // If booking already cancelled, inform the user and refresh trips
+      const msg = String(error?.message || '');
+      if (msg.toLowerCase().includes('already cancelled') || msg.toLowerCase().includes('cannot reschedule a cancelled')) {
+        Alert.alert(
+          'Booking Updated',
+          'This booking was already rescheduled or cancelled. Returning to My Trips to refresh your bookings.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/my-trips')
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Reschedule Error', error.message || 'Failed to reschedule booking. Please try again.');
+      }
     }
   };
 
@@ -313,7 +281,7 @@ export default function ManageBookingScreen() {
    */
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString + 'T12:00:00'); // Add time to avoid timezone issues
+    const date = parseDate(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
@@ -328,7 +296,7 @@ export default function ManageBookingScreen() {
    */
   const formatTime = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString + 'T12:00:00'); // Add time to avoid timezone issues
+    const date = parseDate(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -345,12 +313,7 @@ export default function ManageBookingScreen() {
     
     try {
       // Handle both Date objects and date strings
-      let date;
-      if (dateString instanceof Date) {
-        date = dateString;
-      } else {
-        date = new Date(dateString + 'T12:00:00'); // Add time to avoid timezone issues
-      }
+      const date = parseDate(dateString);
       
       // Check if date is valid
       if (isNaN(date.getTime())) {
@@ -371,6 +334,38 @@ export default function ManageBookingScreen() {
       console.error('Error formatting compact date time:', dateString, error);
       return 'N/A';
     }
+  };
+
+  /**
+   * Parse date safely (handles strings and Date objects)
+   */
+  const parseDate = (dateInput) => {
+    if (!dateInput) return null;
+    if (dateInput instanceof Date) return dateInput;
+    let str = String(dateInput);
+    // If backend provides microseconds (e.g., 2025-09-18T19:31:52.601155),
+    // trim to milliseconds so JS Date can parse it reliably
+    str = str.replace(/\.(\d{3})\d+$/, '.$1');
+    // If it's date-only, anchor to noon to avoid timezone day-shift
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      str = `${str}T12:00:00`;
+    }
+    const d = new Date(str);
+    return isNaN(d) ? null : d;
+  };
+
+  /**
+   * Compute flight duration in Hh Mm
+   */
+  const getFlightDuration = (startStr, endStr) => {
+    const start = parseDate(startStr);
+    const end = parseDate(endStr);
+    if (!start || !end || isNaN(start) || isNaN(end)) return 'N/A';
+    const diffMs = Math.max(0, end.getTime() - start.getTime());
+    const totalMinutes = Math.round(diffMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
   };
 
   // Debug logging
@@ -472,6 +467,12 @@ export default function ManageBookingScreen() {
                 <Text style={styles.detailLabel}>Arrival:</Text>
                 <Text style={styles.detailValue}>
                   {formatCompactDateTime(booking.flight?.arrival_time)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Duration:</Text>
+                <Text style={styles.detailValue}>
+                  {getFlightDuration(booking.flight?.departure_time, booking.flight?.arrival_time)}
                 </Text>
               </View>
               <View style={styles.detailRow}>
@@ -603,47 +604,6 @@ export default function ManageBookingScreen() {
       </Modal>
 
 
-      {/* Cancel Confirmation Modal */}
-      <Modal
-        visible={showCancelModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCancelModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cancel & Request Refund</Text>
-            <Text style={styles.modalDescription}>
-              Booking {booking?.booking_reference} will be cancelled and a refund will be processed within 5-7 business days.
-            </Text>
-            <TextInput
-              style={styles.modalTextArea}
-              value={refundReason}
-              onChangeText={setRefundReason}
-              placeholder="Reason for cancellation (optional)"
-              multiline
-              numberOfLines={3}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelModalButton]}
-                onPress={() => {
-                  setShowCancelModal(false);
-                  setRefundReason('');
-                }}
-              >
-                <Text style={styles.cancelModalButtonText}>Keep Booking</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmCancelButton]}
-                onPress={handleCancelBooking}
-              >
-                <Text style={styles.confirmCancelButtonText}>Cancel & Refund</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Reschedule Modal */}
       <Modal
@@ -701,9 +661,8 @@ export default function ManageBookingScreen() {
                       <Text style={styles.flightTime}>
                         {formatCompactDateTime(flight.departure_time)}
                       </Text>
-                      <Text style={styles.flightPrice}>
-                        {flight.seat_class === 'business' ? 'Falcon Gold' : 'Economy'}: BHD {flight.economy_price?.toFixed(3) || flight.business_price?.toFixed(3)}
-                      </Text>
+                      <Text style={styles.flightPrice}>Economy: BHD {flight.economy_price?.toFixed(3)}</Text>
+                      <Text style={styles.flightPrice}>Falcon Gold: BHD {flight.business_price?.toFixed(3)}</Text>
                     </View>
                     {selectedNewFlight?.id === flight.id && (
                       <Ionicons name="checkmark-circle" size={24} color="#A68F65" />
@@ -719,6 +678,32 @@ export default function ManageBookingScreen() {
                 <Text style={styles.selectedFlightDetails}>
                   {selectedNewFlight.flight_number} • {formatCompactDateTime(selectedNewFlight.departure_time)}
                 </Text>
+                <View style={{ marginTop: 12 }}>
+                  <Text style={styles.selectedFlightTitle}>Choose Seat Class:</Text>
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => setSelectedSeatClass('economy')}
+                      style={[styles.flightOption, selectedSeatClass === 'economy' && styles.selectedFlightOption]}
+                    >
+                      <Text>Economy</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setSelectedSeatClass('business')}
+                      style={[styles.flightOption, selectedSeatClass === 'business' && styles.selectedFlightOption]}
+                    >
+                      <Text>Falcon Gold</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <View style={{ marginTop: 12 }}>
+                  <Text style={styles.selectedFlightTitle}>Seat Number (optional):</Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder={`e.g. ${booking?.seat_number || '12A'}`}
+                    value={selectedSeatNumber || ''}
+                    onChangeText={setSelectedSeatNumber}
+                  />
+                </View>
               </View>
             )}
           </ScrollView>
@@ -989,7 +974,6 @@ const styles = StyleSheet.create({
   // Modal styling
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -997,8 +981,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 24,
-    width: '90%',
-    maxWidth: 400,
+    width: '100%',
+    maxWidth: 480,
+  },
+  // Full-screen cancel modal header
+  modalTopBar: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  modalBrandLogo: {
+    width: 200,
+    height: 60,
   },
   modalTitle: {
     fontSize: 20,
@@ -1007,11 +1004,32 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  modalTitleLarge: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1A1A2E',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   modalDescription: {
     fontSize: 16,
     color: '#666666',
     marginBottom: 16,
     textAlign: 'center',
+  },
+  modalDescriptionCentered: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalFieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A2E',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
   },
   modalInput: {
     borderWidth: 1,
@@ -1030,41 +1048,47 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlignVertical: 'top',
   },
-  modalButtons: {
+  // New bottom action bar and buttons
+  modalActions: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalBottomBar: {
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  modalBottomBarInner: {
     flexDirection: 'row',
     gap: 12,
   },
-  modalButton: {
+  modalActionButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
   },
-  cancelModalButton: {
+  modalSecondaryButton: {
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
-  saveModalButton: {
-    backgroundColor: '#A68F65',
-  },
-  confirmCancelButton: {
+  modalDangerButton: {
     backgroundColor: '#DC3545',
   },
-  cancelModalButtonText: {
-    color: '#666666',
+  modalSecondaryText: {
+    color: '#1A1A2E',
     fontSize: 16,
     fontWeight: '600',
   },
-  saveModalButtonText: {
+  modalDangerText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmCancelButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   // Reschedule modal styles
   modalContainer: {

@@ -31,7 +31,6 @@ export default function RootLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="signup" />
       <Stack.Screen name="falcon-flyer" />
-      <Stack.Screen name="dashboard" />
     </Stack>
   );
 }

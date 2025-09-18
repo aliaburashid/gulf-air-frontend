@@ -186,7 +186,12 @@ export const bookingsAPI = {
   getBooking: (id) => apiClient.get(`${API_ENDPOINTS.BOOKINGS}/${id}`),
   cancelBooking: (id) => apiClient.delete(`${API_ENDPOINTS.BOOKINGS}/${id}`),
   checkIn: (id) => apiClient.post(`${API_ENDPOINTS.CHECK_IN}/${id}/checkin`),
-  rescheduleBooking: (bookingId, newFlightId) => apiClient.post(`${API_ENDPOINTS.BOOKINGS}/${bookingId}/reschedule`, { new_flight_id: newFlightId }),
+  rescheduleBooking: (bookingId, newFlightId, seatClass, seatNumber) =>
+    apiClient.post(`${API_ENDPOINTS.BOOKINGS}/${bookingId}/reschedule`, {
+      new_flight_id: newFlightId,
+      seat_class: seatClass,
+      seat_number: seatNumber,
+    }),
 };
 
 export const loyaltyAPI = {
