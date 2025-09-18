@@ -313,7 +313,15 @@ export default function MyTripsScreen() {
     }
     
     if (hoursUntilDeparture > 24) {
-      return `You can check-in ${Math.ceil(hoursUntilDeparture - 24)} hours before departure.`;
+      const daysUntilDeparture = Math.floor(hoursUntilDeparture / 24);
+      const hoursUntilCheckIn = hoursUntilDeparture - 24;
+      const daysUntilCheckIn = Math.floor(hoursUntilCheckIn / 24);
+      
+      if (daysUntilCheckIn > 0) {
+        return `Check-in opens in ${daysUntilCheckIn} day${daysUntilCheckIn > 1 ? 's' : ''} (24 hours before departure).`;
+      } else {
+        return `Check-in opens in ${Math.ceil(hoursUntilCheckIn)} hours.`;
+      }
     }
     
     return 'You can check-in now!';

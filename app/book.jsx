@@ -49,6 +49,7 @@ export default function BookScreen() {
   // State for search results and UI
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [noFlightsForSelectedDate, setNoFlightsForSelectedDate] = useState(false);
   const [showAirportModal, setShowAirportModal] = useState(false);
   const [airportType, setAirportType] = useState('origin'); // 'origin' or 'destination'
   const [selectedFlight, setSelectedFlight] = useState(null);
@@ -185,6 +186,48 @@ export default function BookScreen() {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  /**
+   * Format Full Date for Display
+   * Converts date to readable format like "9 OCT 2025"
+   */
+  const formatFullDate = (dateString) => {
+    if (!dateString) return 'N/A';
+
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return 'N/A';
+      }
+
+      const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+      const day = date.getDate();
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    } catch (error) {
+      console.error('Error formatting full date:', dateString, error);
+      return 'N/A';
+    }
+  };
+
+  /**
+   * Group flights by date
+   * Returns an object with dates as keys and arrays of flights as values
+   */
+  const groupFlightsByDate = (flights) => {
+    const grouped = {};
+    flights.forEach(flight => {
+      const dateKey = new Date(flight.departureTime).toDateString();
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(flight);
+    });
+    return grouped;
   };
 
   /**
@@ -608,7 +651,7 @@ export default function BookScreen() {
       setSearchResults(transformedFlights);
       
       if (transformedFlights.length === 0) {
-        // Show all available flights for this route without popup
+        // Show all available flights for this route with clear messaging
         const allFlightsForRoute = flights.map(flight => ({
           id: flight.id,
           flightNumber: flight.flight_number,
@@ -624,6 +667,9 @@ export default function BookScreen() {
         }));
         
         setSearchResults(allFlightsForRoute);
+        setNoFlightsForSelectedDate(true);
+      } else {
+        setNoFlightsForSelectedDate(false);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -836,7 +882,25 @@ export default function BookScreen() {
         {searchResults.length > 0 && (
           <View style={styles.resultsContainer}>
             <Text style={styles.resultsTitle}>Available Flights</Text>
-            {searchResults.map((flight) => (
+            
+            {/* Warning message when no flights found for selected date */}
+            {noFlightsForSelectedDate && (
+              <View style={styles.warningContainer}>
+                <View style={styles.warningHeader}>
+                  <Ionicons name="information-circle" size={20} color="#FF6B35" />
+                  <Text style={styles.warningTitle}>Date Not Available</Text>
+                </View>
+                <Text style={styles.warningText}>
+                  {formatFullDate(departureDate)} isn't available for this route. Please select from these available dates:
+                </Text>
+              </View>
+            )}
+            
+            {/* Group flights by date and display */}
+            {Object.entries(groupFlightsByDate(searchResults)).map(([dateKey, flightsForDate]) => (
+              <View key={dateKey} style={styles.dateGroup}>
+                <Text style={styles.dateHeader}>{formatFullDate(flightsForDate[0].departureTime)}</Text>
+                {flightsForDate.map((flight) => (
               <TouchableOpacity
                 key={flight.id}
                 style={styles.flightCard}
@@ -874,6 +938,8 @@ export default function BookScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
+                ))}
+              </View>
             ))}
           </View>
         )}
@@ -1586,6 +1652,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A1A2E',
     marginBottom: 16,
+  },
+  // Warning container for date not available
+  warningContainer: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#FFB74D',
+  },
+  warningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginLeft: 8,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#E65100',
+    lineHeight: 20,
+  },
+  // Date group styling
+  dateGroup: {
+    marginBottom: 20,
+  },
+  dateHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1A1A2E',
+    marginBottom: 12,
+    paddingLeft: 4,
   },
   // Flight card
   flightCard: {
