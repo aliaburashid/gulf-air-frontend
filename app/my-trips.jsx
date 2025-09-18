@@ -329,12 +329,59 @@ export default function MyTripsScreen() {
 
   /**
    * Handle Check In
-   * Processes check-in for a specific booking
+   * Processes check-in for a specific booking and shows loyalty rewards
    */
   const handleCheckIn = async (bookingId) => {
     try {
-      await bookingsAPI.checkIn(bookingId);
-      Alert.alert('Success', 'Check-in completed successfully!');
+      const response = await bookingsAPI.checkIn(bookingId);
+      
+      // Show success message with loyalty rewards
+      if (response.data && response.data.loyalty_rewards) {
+        const rewards = response.data.loyalty_rewards;
+        const tierUpgrade = response.data.tier_upgrade;
+        
+        let message = `You've earned ${rewards.miles_earned} miles and ${rewards.points_earned} points!\n\n` +
+          `Flight: ${rewards.flight_distance} miles\n` +
+          `Seat Class: ${rewards.seat_class.charAt(0).toUpperCase() + rewards.seat_class.slice(1)}\n` +
+          `Loyalty Tier: ${rewards.loyalty_tier}\n\n` +
+          `Total Miles: ${rewards.total_miles}\n` +
+          `Total Points: ${rewards.total_points}`;
+        
+        let title = 'Check-in Successful! 🎉';
+        
+        // Add tier upgrade message if user was upgraded
+        if (tierUpgrade && tierUpgrade.upgraded) {
+          title = '🎉 TIER UPGRADE! 🎉';
+          message = `CONGRATULATIONS! You've been upgraded to ${tierUpgrade.new_tier} tier!\n\n` +
+            `Previous Tier: ${tierUpgrade.old_tier}\n` +
+            `New Tier: ${tierUpgrade.new_tier}\n\n` +
+            `You earned ${rewards.miles_earned} miles and ${rewards.points_earned} points!\n` +
+            `Total Miles: ${rewards.total_miles}\n\n` +
+            `Enjoy your new ${tierUpgrade.new_tier} benefits!`;
+        } else if (tierUpgrade && tierUpgrade.next_tier_threshold) {
+          // Show progress to next tier
+          const pointsToNext = tierUpgrade.next_tier_threshold - rewards.total_points;
+          message += `\n\nPoints to next tier: ${pointsToNext}`;
+        }
+        
+        Alert.alert(
+          title,
+          message,
+          [
+            {
+              text: 'View Falconflyer',
+              onPress: () => router.push('/falcon-flyer')
+            },
+            {
+              text: 'OK',
+              style: 'default'
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Success', 'Check-in completed successfully!');
+      }
+      
       // Reload bookings to update status
       loadUserBookings();
     } catch (error) {

@@ -98,6 +98,7 @@ export const API_ENDPOINTS = {
   
   // User endpoints
   PROFILE: '/auth/profile',
+  LOYALTY: '/auth/loyalty',
   
   // Flight endpoints
   FLIGHTS: '/api/flights',
@@ -195,9 +196,7 @@ export const bookingsAPI = {
 };
 
 export const loyaltyAPI = {
-  getStatus: () => apiClient.get(API_ENDPOINTS.LOYALTY_STATUS),
-  getTiers: () => apiClient.get(API_ENDPOINTS.LOYALTY_TIERS),
-  enroll: (enrollmentData) => apiClient.post(API_ENDPOINTS.LOYALTY_ENROLL, enrollmentData),
+  getLoyaltyData: () => apiClient.get(API_ENDPOINTS.LOYALTY),
 };
 
 // Legacy function for backward compatibility

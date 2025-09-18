@@ -1444,7 +1444,7 @@ export default function BookScreen() {
           <Text style={styles.navItemTextActive}>Book</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/falcon-flyer')}>
           <Ionicons name="heart" size={24} color="#8B8B8B" />
           <Text style={styles.navItemText}>Falconflyer</Text>
         </TouchableOpacity>
